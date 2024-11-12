@@ -7,4 +7,12 @@ class Api::V1::Merchants::InvoicesController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     render json: ErrorSerializer.format_errors(['Merchant not found']), status: :not_found
   end
+
+  def show
+    invoice = Invoice.find(params[:id])
+
+    render json: InvoiceSerializer.new(invoice), status: :ok
+  rescue ActiveRecord::RecordNotFound
+    render json: ErrorSerializer.format_errors(['Invoice not found']), status: :not_found
+  end
 end

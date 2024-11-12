@@ -19,4 +19,3 @@ Run your server with `rails s` and you should be able to access endpoints via lo
 
 ![Alt text](LittleShopDiagram.png)
 
-Making edits in order to merge changes to main
