@@ -19,6 +19,9 @@ RSpec.describe "Merchant invoices endpoints" do
     Invoice.create!(customer: @customer1, merchant: @merchant1, status: "shipped")
     Invoice.create!(customer: @customer1, merchant: @merchant1, status: "shipped")
     @invoice2 = Invoice.create!(customer: @customer1, merchant: @merchant2, status: "shipped", coupon: @coupon2)
+
+    InvoiceItem.create!(invoice: @invoice1, item: @item1_merchant1, quantity: 1, unit_price: @item1_merchant1.unit_price)
+    InvoiceItem.create!(invoice: @invoice2, item: @item2_merchant2, quantity: 1, unit_price: @item2_merchant2.unit_price)
   end
 
   it "should return all invoices for a given merchant when no status param is provided" do
@@ -97,5 +100,47 @@ RSpec.describe "Merchant invoices endpoints" do
     expect(json[:message]).to eq("Your query could not be completed")
     expect(json[:errors]).to be_a Array
     expect(json[:errors].first).to eq("Merchant not found")
+  end
+
+  it "should return the adjusted total for an invoice with a dollar-off coupon" do
+    get "/api/v1/merchants/#{@merchant2.id}/invoices/#{@invoice2.id}"
+
+    json = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(json[:data][:attributes][:total_amount]).to eq(150.0)
+    expect(json[:data][:attributes][:adjusted_total]).to eq(130.0)
+  end
+
+  it "should adjust the total to zero if the coupon value exceeds the invoice total" do
+    @coupon2.update(discount_value: 200) 
+    get "/api/v1/merchants/#{@merchant2.id}/invoices/#{@invoice2.id}"
+
+    json = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(json[:data][:attributes][:total_amount]).to eq(150.0)
+    expect(json[:data][:attributes][:adjusted_total]).to eq(0.0)
+  end
+
+  it "should return the total amount if no coupon is applied" do
+    get "/api/v1/merchants/#{@merchant1.id}/invoices/#{@invoice1.id}"
+
+    json = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(json[:data][:attributes][:total_amount]).to eq(100.0)
+    expect(json[:data][:attributes][:adjusted_total]).to eq(100.0) 
+  end
+
+  it "returns a 404 error if the invoice is not found" do
+    get "/api/v1/merchants/#{@merchant2.id}/invoices/999999" 
+
+    json = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to have_http_status(:not_found)
+    expect(json[:message]).to eq("Your query could not be completed")
+    expect(json[:errors]).to be_an(Array)
+    expect(json[:errors].first).to eq("Invoice not found")
   end
 end
