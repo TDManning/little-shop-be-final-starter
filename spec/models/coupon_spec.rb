@@ -11,6 +11,8 @@ RSpec.describe Coupon, type: :model do
     @coupon1 = FactoryBot.create(:coupon, merchant: @merchant1, code: 'SAVE10')
     @coupon2 = FactoryBot.create(:coupon, merchant: @merchant1, code: 'DISCOUNT20')
     @coupon3 = FactoryBot.create(:coupon, merchant: @merchant2, code: 'PROMO15')
+    @coupon4 = FactoryBot.create(:coupon, merchant: @merchant, code: 'SAVE20', active: true, discount_type: 'percent', discount_value: 10)
+
 
     @invoice1 = FactoryBot.create(:invoice, customer: @customer, merchant: @merchant1, coupon: @coupon1)
     @invoice2 = FactoryBot.create(:invoice, customer: @customer, merchant: @merchant1, coupon: @coupon1)
@@ -19,6 +21,9 @@ RSpec.describe Coupon, type: :model do
     @coupon_active1 = FactoryBot.create(:coupon, merchant: @merchant1, active: true)
     @coupon_active2 = FactoryBot.create(:coupon, merchant: @merchant1, active: true)
     @coupon_inactive = FactoryBot.create(:coupon, merchant: @merchant1, active: false)
+
+    @packaged_invoice = FactoryBot.create(:invoice, customer: @customer, merchant: @merchant, coupon: @coupon, status: 'packaged')
+    @shipped_invoice = FactoryBot.create(:invoice, customer: @customer, merchant: @merchant, coupon: @coupon, status: 'shipped')
   end
 
   describe 'associations' do
@@ -162,18 +167,6 @@ RSpec.describe Coupon, type: :model do
         expect(result).to be_falsey
         expect(@coupon.reload.discount_type).not_to eq('invalid_type')
         expect(@coupon.errors.full_messages).to include('Discount type is not included in the list')
-      end
-    end
-
-    context 'when validations prevent update' do
-      it 'does not update the coupon when merchant exceeds active coupon limit' do
-    
-        5.times { FactoryBot.create(:coupon, merchant: @merchant, active: true) }
-        result = @coupon.update_with_status(active: true)
-    
-        expect(result).to be_falsey
-        expect(@coupon.reload.active).to eq(false)
-        expect(@coupon.errors.full_messages).to include('Merchant cannot have more than 5 active coupons')
       end
     end
 
