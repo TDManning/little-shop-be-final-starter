@@ -34,21 +34,10 @@ class Coupon < ApplicationRecord
 
   private
 
-  # def merchant_cannot_exceed_five_active_coupons
-  #   return unless merchant.present?
-
-  #   if merchant.coupons.where(active: true).count >= 5
-  #     errors.add(:base, 'Merchant cannot have more than 5 active coupons')
-  #   end
-  # end
-
   def merchant_cannot_exceed_five_active_coupons
     return unless merchant.present?
-  
-    # Exclude the current coupon being validated from the count
-    active_coupons_count = merchant.coupons.where(active: true).where.not(id: id).count
-  
-    if active_coupons_count >= 5
+
+    if merchant.coupons.where(active: true).count >= 5
       errors.add(:base, 'Merchant cannot have more than 5 active coupons')
     end
   end
